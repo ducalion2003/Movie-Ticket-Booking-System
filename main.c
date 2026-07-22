@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define MOVIES 3
-#define SHOWTIMES 2
+#define MOVIES 4
+#define SHOWTIMES 3
 #define ROWS 5
 #define COLS 10
 
@@ -10,7 +10,6 @@
 #define PRICE_REGULAR 500.0  // Rows A-B
 #define PRICE_PREMIUM 750.0  // Rows C-D
 #define PRICE_VIP     1000.0 // Row E
-
 // --- Data Structures ---
 typedef struct {
     int isBooked;            // 0 = Available, 1 = Booked
@@ -56,8 +55,8 @@ int main()
 // ==========================================
 void initData(void)
 {
-    char *titles[MOVIES] = {"Odyssey", "Avengers: Doomsday", "Spider-Man: Brand New Day"};
-    char *times[SHOWTIMES] = {"10:00 AM", "06:00 PM"};
+    char *titles[MOVIES] = {"Odyssey", "Avengers: Doomsday", "Spider-Man: Brand New Day", "Batman: The Dark Knight"};
+    char *times[SHOWTIMES] = {"10:00 AM", "06:00 PM", "09:00 PM"};
 
     for (int i = 0; i < MOVIES; i++)
     {
@@ -122,7 +121,7 @@ void viewSeatMap(void)
         return;
     }
 
-    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n");
+    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n3. 09:00 PM\n");
     printf("Select Showtime (1-%d): ", SHOWTIMES);
     if (scanf("%d", &showtimeChoice) != 1 || showtimeChoice < 1 || showtimeChoice > SHOWTIMES)
     {
