@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
-#define MOVIES 4
-#define SHOWTIMES 3
+#define MOVIES 3
+#define SHOWTIMES 2
 #define ROWS 5
 #define COLS 10
 
@@ -10,6 +11,7 @@
 #define PRICE_REGULAR 500.0  // Rows A-B
 #define PRICE_PREMIUM 750.0  // Rows C-D
 #define PRICE_VIP     1000.0 // Row E
+
 // --- Data Structures ---
 typedef struct {
     int isBooked;            // 0 = Available, 1 = Booked
@@ -38,6 +40,8 @@ void initData(void);
 void displayMenu(void);
 void menu(void);
 void viewSeatMap(void);
+void bookASeat(void);
+double calculatePrice(int row, int discountType, int totalSeatsBooked);
 
 // ==========================================
 // Main Function
@@ -51,12 +55,12 @@ int main()
 }
 
 // ==========================================
-// Initialization Functions
+// Initialization & Utility Functions
 // ==========================================
 void initData(void)
 {
-    char *titles[MOVIES] = {"Odyssey", "Avengers: Doomsday", "Spider-Man: Brand New Day", "Batman: The Dark Knight"};
-    char *times[SHOWTIMES] = {"10:00 AM", "06:00 PM", "09:00 PM"};
+    char *titles[MOVIES] = {"Odyssey", "Avengers: Doomsday", "Spider-Man: Brand New Day"};
+    char *times[SHOWTIMES] = {"10:00 AM", "06:00 PM"};
 
     for (int i = 0; i < MOVIES; i++)
     {
@@ -82,8 +86,35 @@ void initData(void)
     }
 }
 
+double calculatePrice(int row, int discountType, int totalSeatsBooked)
+{
+    double basePrice = 0.0;
+
+    // Base pricing: Rows A-B (Regular), C-D (Premium), E (VIP)
+    if (row == 0 || row == 1)
+        basePrice = PRICE_REGULAR;
+    else if (row == 2 || row == 3)
+        basePrice = PRICE_PREMIUM;
+    else if (row == 4)
+        basePrice = PRICE_VIP;
+
+    double finalPrice = basePrice;
+
+    // Apply category discount (1 = Standard/0%, 2 = Student/10%, 3 = Senior/20%)
+    if (discountType == 2)
+        finalPrice -= (basePrice * 0.10);
+    else if (discountType == 3)
+        finalPrice -= (basePrice * 0.20);
+
+    // Apply 10% group discount if 4 or more seats are booked in a single transaction
+    if (totalSeatsBooked >= 4)
+        finalPrice -= (basePrice * 0.10);
+
+    return finalPrice;
+}
+
 // ==========================================
-// Display Menu Function
+// 1. Display Menu Function
 // ==========================================
 void displayMenu(void)
 {
@@ -101,7 +132,7 @@ void displayMenu(void)
 }
 
 // ==========================================
-// View Seat Map Function
+// 2. View Seat Map Function
 // ==========================================
 void viewSeatMap(void)
 {
@@ -121,7 +152,7 @@ void viewSeatMap(void)
         return;
     }
 
-    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n3. 09:00 PM\n");
+    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n");
     printf("Select Showtime (1-%d): ", SHOWTIMES);
     if (scanf("%d", &showtimeChoice) != 1 || showtimeChoice < 1 || showtimeChoice > SHOWTIMES)
     {
@@ -165,6 +196,161 @@ void viewSeatMap(void)
 }
 
 // ==========================================
+// 3. Book a Seat Function
+// ==========================================
+void bookASeat(void)
+{
+    int movieChoice, showtimeChoice, numSeats, discountType;
+    char name[50];
+
+    printf("\n--- SELECT MOVIE & SHOWTIME ---\n");
+    for (int i = 0; i < MOVIES; i++)
+    {
+        printf("%d. %s\n", movieData[i].id, movieData[i].title);
+    }
+
+    printf("Select Movie (1-%d): ", MOVIES);
+    if (scanf("%d", &movieChoice) != 1 || movieChoice < 1 || movieChoice > MOVIES)
+    {
+        printf("[ERROR] Invalid Movie selection!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n");
+    printf("Select Showtime (1-%d): ", SHOWTIMES);
+    if (scanf("%d", &showtimeChoice) != 1 || showtimeChoice < 1 || showtimeChoice > SHOWTIMES)
+    {
+        printf("[ERROR] Invalid Showtime selection!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    Showtime *st = &movieData[movieChoice - 1].showtimes[showtimeChoice - 1];
+
+    printf("\nHow many seats do you want to book?: ");
+    if (scanf("%d", &numSeats) != 1 || numSeats <= 0 || numSeats > (ROWS * COLS))
+    {
+        printf("[ERROR] Invalid number of seats!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    // Clean remaining trailing newline from buffer
+    getchar();
+
+    printf("Enter Customer Name: ");
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0'; // strip trailing newline
+
+    printf("\nSelect Category Discount:\n");
+    printf("1. Regular / Standard (0%% discount)\n");
+    printf("2. Student (10%% discount)\n");
+    printf("3. Senior Citizen (20%% discount)\n");
+    printf("Enter Choice (1-3): ");
+    if (scanf("%d", &discountType) != 1 || discountType < 1 || discountType > 3)
+    {
+        printf("[WARNING] Invalid discount choice. Defaulting to Regular Category.\n");
+        discountType = 1;
+    }
+
+    int targetRows[ROWS * COLS];
+    int targetCols[ROWS * COLS];
+
+    for (int i = 0; i < numSeats; i++)
+    {
+        char rowChar;
+        int colNum;
+
+        while (1)
+        {
+            printf("\nEnter Seat %d of %d (e.g., A 5 or C 10): ", i + 1, numSeats);
+            if (scanf(" %c %d", &rowChar, &colNum) != 2)
+            {
+                printf("[ERROR] Invalid seat input format! Try again.\n");
+                while (getchar() != '\n');
+                continue;
+            }
+
+            rowChar = toupper(rowChar);
+            int r = rowChar - 'A';
+            int c = colNum - 1;
+
+            // Range validation
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS)
+            {
+                printf("[ERROR] Seat out of range! Rows are A-E and Seats are 1-10.\n");
+                continue;
+            }
+
+            // Availability validation
+            if (st->seats[r][c].isBooked)
+            {
+                printf("[ERROR] Seat %c%d is already taken! Pick a different seat.\n", rowChar, colNum);
+                continue;
+            }
+
+            // Duplicate checks in current batch
+            int isDuplicate = 0;
+            for (int k = 0; k < i; k++)
+            {
+                if (targetRows[k] == r && targetCols[k] == c)
+                {
+                    isDuplicate = 1;
+                    break;
+                }
+            }
+            if (isDuplicate)
+            {
+                printf("[ERROR] You already selected seat %c%d in this transaction!\n", rowChar, colNum);
+                continue;
+            }
+
+            targetRows[i] = r;
+            targetCols[i] = c;
+            break;
+        }
+    }
+
+    // Processing & Calculations
+    double totalBill = 0.0;
+    printf("\n=====================================\n");
+    printf("          BOOKING CONFIRMATION       \n");
+    printf("=====================================\n");
+    printf("Customer Name: %s\n", name);
+    printf("Movie: %s (%s)\n", movieData[movieChoice - 1].title, st->time);
+    printf("-------------------------------------\n");
+
+    for (int i = 0; i < numSeats; i++)
+    {
+        int r = targetRows[i];
+        int c = targetCols[i];
+
+        double seatPrice = calculatePrice(r, discountType, numSeats);
+
+        // Update grid state and recording metrics
+        st->seats[r][c].isBooked = 1;
+        strcpy(st->seats[r][c].customerName, name);
+        st->seats[r][c].pricePaid = seatPrice;
+
+        st->totalTicketsSold++;
+        st->totalRevenue += seatPrice;
+        totalBill += seatPrice;
+
+        printf("Seat %c%d : Price Paid = Rs. %.2f\n", 'A' + r, c + 1, seatPrice);
+    }
+
+    if (numSeats >= 4)
+    {
+        printf("* Additional 10%% Group Discount Applied (4+ seats booked)!\n");
+    }
+
+    printf("-------------------------------------\n");
+    printf("TOTAL PAID : Rs. %.2f\n", totalBill);
+    printf("=====================================\n");
+}
+
+// ==========================================
 // Menu Control Handler
 // ==========================================
 void menu(void)
@@ -194,7 +380,7 @@ void menu(void)
                 break;
 
             case 3:
-                printf("\nBook a Seat\n");
+                bookASeat();   // Call Book a Seat function
                 break;
 
             case 4:
