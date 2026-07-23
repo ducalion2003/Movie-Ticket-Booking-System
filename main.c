@@ -636,7 +636,7 @@ void menu(void)
                 break;
 
             case 6:
-                printf("\nRevenue Report\n");
+                generateRevenueReport(); // Call Revenue Report function
                 break;
 
             case 7:
