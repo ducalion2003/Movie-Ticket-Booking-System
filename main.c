@@ -41,6 +41,8 @@ void displayMenu(void);
 void menu(void);
 void viewSeatMap(void);
 void bookASeat(void);
+void cancelBooking(void);
+void searchBooking(void);
 double calculatePrice(int row, int discountType, int totalSeatsBooked);
 
 // ==========================================
@@ -351,6 +353,154 @@ void bookASeat(void)
 }
 
 // ==========================================
+// 4. Cancel Booking Function
+// ==========================================
+void cancelBooking(void)
+{
+    int movieChoice, showtimeChoice;
+    char rowChar;
+    int colNum;
+
+    printf("\n--- CANCEL BOOKING ---\n");
+    for (int i = 0; i < MOVIES; i++)
+    {
+        printf("%d. %s\n", movieData[i].id, movieData[i].title);
+    }
+
+    printf("Select Movie (1-%d): ", MOVIES);
+    if (scanf("%d", &movieChoice) != 1 || movieChoice < 1 || movieChoice > MOVIES)
+    {
+        printf("[ERROR] Invalid Movie selection!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    printf("\nShowtimes:\n1. 10:00 AM\n2. 06:00 PM\n");
+    printf("Select Showtime (1-%d): ", SHOWTIMES);
+    if (scanf("%d", &showtimeChoice) != 1 || showtimeChoice < 1 || showtimeChoice > SHOWTIMES)
+    {
+        printf("[ERROR] Invalid Showtime selection!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    Showtime *st = &movieData[movieChoice - 1].showtimes[showtimeChoice - 1];
+
+    printf("\nEnter Seat to Cancel (e.g., A 5 or C 10): ");
+    if (scanf(" %c %d", &rowChar, &colNum) != 2)
+    {
+        printf("[ERROR] Invalid seat format!\n");
+        while (getchar() != '\n');
+        return;
+    }
+
+    rowChar = toupper(rowChar);
+    int r = rowChar - 'A';
+    int c = colNum - 1;
+
+    // Check row and column boundaries
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS)
+    {
+        printf("[ERROR] Seat out of range! Rows are A-E and Seats are 1-10.\n");
+        return;
+    }
+
+    // Check if the seat is actually booked
+    if (!st->seats[r][c].isBooked)
+    {
+        printf("[ERROR] Seat %c%d is not currently booked.\n", rowChar, colNum);
+        return;
+    }
+
+    // Perform refund and reset seat data
+    double refundedAmount = st->seats[r][c].pricePaid;
+    st->seats[r][c].isBooked = 0;
+    st->seats[r][c].customerName[0] = '\0';
+    st->seats[r][c].pricePaid = 0.0;
+
+    // Update global metrics
+    st->totalTicketsSold--;
+    st->totalRevenue -= refundedAmount;
+
+    printf("\n=====================================\n");
+    printf("         CANCELLATION SUCCESS        \n");
+    printf("=====================================\n");
+    printf("Seat %c%d has been successfully canceled.\n", rowChar, colNum);
+    printf("Refund Amount: Rs. %.2f\n", refundedAmount);
+    printf("=====================================\n");
+}
+
+// ==========================================
+// 5. Search Booking Function
+// ==========================================
+void searchBooking(void)
+{
+    char searchTerm[50];
+
+    printf("\n--- SEARCH BOOKINGS ---\n");
+    getchar(); // Clear remaining newline in input buffer
+    printf("Enter Customer Name or Seat Number (e.g., 'John' or 'A5'): ");
+    fgets(searchTerm, sizeof(searchTerm), stdin);
+    searchTerm[strcspn(searchTerm, "\n")] = '\0'; // Remove newline
+
+    if (strlen(searchTerm) == 0)
+    {
+        printf("[ERROR] Search query cannot be empty!\n");
+        return;
+    }
+
+    int foundCount = 0;
+
+    printf("\n=================================================================================\n");
+    printf("                               SEARCH RESULTS                                    \n");
+    printf("=================================================================================\n");
+
+    for (int i = 0; i < MOVIES; i++)
+    {
+        for (int j = 0; j < SHOWTIMES; j++)
+        {
+            Showtime *st = &movieData[i].showtimes[j];
+
+            for (int r = 0; r < ROWS; r++)
+            {
+                for (int c = 0; c < COLS; c++)
+                {
+                    if (st->seats[r][c].isBooked)
+                    {
+                        char seatCode[10];
+                        snprintf(seatCode, sizeof(seatCode), "%c%d", 'A' + r, c + 1);
+
+                        // Match against customer name OR specific seat code
+                        if (strstr(st->seats[r][c].customerName, searchTerm) != NULL ||
+                            strcmp(seatCode, searchTerm) == 0)
+                        {
+                            printf("Movie   : %s\n", movieData[i].title);
+                            printf("Time    : %s\n", st->time);
+                            printf("Seat    : %s\n", seatCode);
+                            printf("Customer: %s\n", st->seats[r][c].customerName);
+                            printf("Paid    : Rs. %.2f\n", st->seats[r][c].pricePaid);
+                            printf("---------------------------------------------------------------------------------\n");
+                            foundCount++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (foundCount == 0)
+    {
+        printf("No active bookings found matching '%s'.\n", searchTerm);
+        printf("=================================================================================\n");
+    }
+    else
+    {
+        printf("Total matches found: %d\n", foundCount);
+        printf("=================================================================================\n");
+    }
+}
+
+// ==========================================
 // Menu Control Handler
 // ==========================================
 void menu(void)
@@ -384,11 +534,11 @@ void menu(void)
                 break;
 
             case 4:
-                printf("\nCancel Booking\n");
+                cancelBooking(); // Call Cancel Booking function
                 break;
 
             case 5:
-                printf("\nSearch Booking\n");
+                searchBooking(); // Call Search Booking function
                 break;
 
             case 6:
@@ -405,3 +555,4 @@ void menu(void)
 
     } while(choice != 7);
 }
+
