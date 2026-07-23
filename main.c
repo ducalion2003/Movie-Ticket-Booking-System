@@ -46,6 +46,7 @@ void bookASeat(void);
 void cancelBooking(void);
 void searchBooking(void);
 double calculatePrice(int row, int discountType, int totalSeatsBooked);
+void generateRevenueReport(void);
 
 // ==========================================
 // Main Function
@@ -555,6 +556,42 @@ void searchBooking(void)
         printf("Total matches found: %d\n", foundCount);
         printf("=================================================================================\n");
     }
+}
+
+// ==========================================
+// 6. Revenue Report Function
+// ==========================================
+void generateRevenueReport(void)
+{
+    double grandTotalRevenue = 0.0;
+    int grandTotalTickets = 0;
+
+    printf("\n=============================================================\n");
+    printf("                    REVENUE REPORT\n");
+    printf("=============================================================\n");
+
+    for (int i = 0; i < MOVIES; i++)
+    {
+        printf("\nMovie: %s\n", movieData[i].title);
+
+        for (int j = 0; j < SHOWTIMES; j++)
+        {
+            Showtime *st = &movieData[i].showtimes[j];
+
+            printf("Showtime: %-10s | Tickets Sold: %2d | Revenue: Rs. %.2f\n",
+                   st->time,
+                   st->totalTicketsSold,
+                   st->totalRevenue);
+
+            grandTotalTickets += st->totalTicketsSold;
+            grandTotalRevenue += st->totalRevenue;
+        }
+    }
+
+    printf("\n-------------------------------------------------------------\n");
+    printf("TOTAL TICKETS SOLD : %d\n", grandTotalTickets);
+    printf("TOTAL REVENUE      : Rs. %.2f\n", grandTotalRevenue);
+    printf("=============================================================\n");
 }
 
 // ==========================================
