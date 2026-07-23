@@ -40,6 +40,7 @@ Movie movieData[MOVIES];
 void initData(void);
 void displayMenu(void);
 void menu(void);
+void viewShowtimes(void);
 void viewSeatMap(void);
 void bookASeat(void);
 void cancelBooking(void);
@@ -118,14 +119,13 @@ double calculatePrice(int row, int discountType, int totalSeatsBooked)
 }
 
 // ==========================================
-// 1. Display Menu Function
+// Menu UI Functions
 // ==========================================
 void displayMenu(void)
 {
     printf("\n=====================================\n");
     printf("     MOVIE TICKET BOOKING SYSTEM\n");
     printf("=====================================\n");
-
     printf("1. View Showtimes\n");
     printf("2. View Seat Map\n");
     printf("3. Book a Seat\n");
@@ -133,6 +133,32 @@ void displayMenu(void)
     printf("5. Search Booking\n");
     printf("6. Revenue Report\n");
     printf("7. Exit\n");
+}
+
+// ==========================================
+// 1. View Showtimes Function
+// ==========================================
+void viewShowtimes(void)
+{
+    printf("\n==================================================\n");
+    printf("               AVAILABLE SHOWTIMES                \n");
+    printf("==================================================\n");
+
+    for (int i = 0; i < MOVIES; i++)
+    {
+        printf("Movie %d: %s\n", movieData[i].id, movieData[i].title);
+        printf("Showtimes: ");
+
+        for (int j = 0; j < SHOWTIMES; j++)
+        {
+            printf("[%s]", movieData[i].showtimes[j].time);
+            if (j < SHOWTIMES - 1)
+            {
+                printf(" , ");
+            }
+        }
+        printf("\n--------------------------------------------------\n");
+    }
 }
 
 // ==========================================
@@ -483,7 +509,7 @@ void searchBooking(void)
     int foundCount = 0;
 
     printf("\n=================================================================================\n");
-    printf("                               SEARCH RESULTS                                    \n");
+    printf("                                  SEARCH RESULTS                                 \n");
     printf("=================================================================================\n");
 
     for (int i = 0; i < MOVIES; i++)
@@ -553,7 +579,7 @@ void menu(void)
         switch(choice)
         {
             case 1:
-                printf("\nView Showtimes\n");
+                viewShowtimes(); // Call the newly integrated function
                 break;
 
             case 2:
