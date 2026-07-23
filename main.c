@@ -16,6 +16,7 @@
 typedef struct {
     int isBooked;            // 0 = Available, 1 = Booked
     char customerName[50];   // Name of customer who booked
+    char password[30];       // Password required for cancellation
     double pricePaid;        // Final price paid for this seat
 } Seat;
 
@@ -81,6 +82,7 @@ void initData(void)
                 {
                     movieData[i].showtimes[j].seats[r][c].isBooked = 0;
                     movieData[i].showtimes[j].seats[r][c].customerName[0] = '\0';
+                    movieData[i].showtimes[j].seats[r][c].password[0] = '\0';
                     movieData[i].showtimes[j].seats[r][c].pricePaid = 0.0;
                 }
             }
@@ -204,6 +206,7 @@ void bookASeat(void)
 {
     int movieChoice, showtimeChoice, numSeats, discountType;
     char name[50];
+    char pwd[30];
 
     printf("\n--- SELECT MOVIE & SHOWTIME ---\n");
     for (int i = 0; i < MOVIES; i++)
@@ -244,6 +247,16 @@ void bookASeat(void)
     printf("Enter Customer Name: ");
     fgets(name, sizeof(name), stdin);
     name[strcspn(name, "\n")] = '\0'; // strip trailing newline
+
+    printf("Set a Password for Cancellation: ");
+    fgets(pwd, sizeof(pwd), stdin);
+    pwd[strcspn(pwd, "\n")] = '\0'; // strip trailing newline
+
+    if (strlen(pwd) == 0)
+    {
+        printf("[ERROR] Password cannot be empty!\n");
+        return;
+    }
 
     printf("\nSelect Category Discount:\n");
     printf("1. Regular / Standard (0%% discount)\n");
@@ -333,6 +346,7 @@ void bookASeat(void)
         // Update grid state and recording metrics
         st->seats[r][c].isBooked = 1;
         strcpy(st->seats[r][c].customerName, name);
+        strcpy(st->seats[r][c].password, pwd);
         st->seats[r][c].pricePaid = seatPrice;
 
         st->totalTicketsSold++;
@@ -353,13 +367,14 @@ void bookASeat(void)
 }
 
 // ==========================================
-// 4. Cancel Booking Function
+// 4. Cancel Booking Function (With Password Security)
 // ==========================================
 void cancelBooking(void)
 {
     int movieChoice, showtimeChoice;
     char rowChar;
     int colNum;
+    char enteredPwd[30];
 
     printf("\n--- CANCEL BOOKING ---\n");
     for (int i = 0; i < MOVIES; i++)
@@ -412,10 +427,26 @@ void cancelBooking(void)
         return;
     }
 
+    // Password Verification
+    getchar(); // Clear trailing newline
+    printf("Enter Password for %s's Booking: ", st->seats[r][c].customerName);
+    fgets(enteredPwd, sizeof(enteredPwd), stdin);
+    enteredPwd[strcspn(enteredPwd, "\n")] = '\0'; // strip trailing newline
+
+    if (strcmp(st->seats[r][c].password, enteredPwd) != 0)
+    {
+        printf("\n=====================================\n");
+        printf(" [ERROR] INCORRECT PASSWORD!\n");
+        printf(" Access Denied: Cancellation aborted.\n");
+        printf("=====================================\n");
+        return;
+    }
+
     // Perform refund and reset seat data
     double refundedAmount = st->seats[r][c].pricePaid;
     st->seats[r][c].isBooked = 0;
     st->seats[r][c].customerName[0] = '\0';
+    st->seats[r][c].password[0] = '\0';
     st->seats[r][c].pricePaid = 0.0;
 
     // Update global metrics
@@ -423,7 +454,7 @@ void cancelBooking(void)
     st->totalRevenue -= refundedAmount;
 
     printf("\n=====================================\n");
-    printf("         CANCELLATION SUCCESS        \n");
+    printf("          CANCELLATION SUCCESS       \n");
     printf("=====================================\n");
     printf("Seat %c%d has been successfully canceled.\n", rowChar, colNum);
     printf("Refund Amount: Rs. %.2f\n", refundedAmount);
@@ -555,4 +586,3 @@ void menu(void)
 
     } while(choice != 7);
 }
-
